@@ -31,7 +31,9 @@ normal = partial(initializations.normal, scale=.02)
 def mean_normal(shape, mean=1., scale=0.02, name=None):
     return K.variable(np.random.normal(loc=mean, scale=scale, size=shape), name=name)
 
-
+'''
+Image preprocessing
+'''
 def cleanup(data):
   X = data[0][:64, -1]
   X = np.asarray([cv2.resize(x.transpose(1, 2, 0), (160, 80)) for x in X])
@@ -39,7 +41,9 @@ def cleanup(data):
   Z = np.random.normal(0, 1, (X.shape[0], z_dim))
   return Z, X
 
-
+'''
+Create the generation half of the model, for a particular batch size and image size.
+'''
 def generator(batch_size, gf_dim, ch, rows, cols):
 
     model = Sequential()
@@ -66,7 +70,9 @@ def generator(batch_size, gf_dim, ch, rows, cols):
 
     return model
 
-
+'''
+ConvNet encoder: project into some latent space.
+'''
 def encoder(batch_size, df_dim, ch, rows, cols):
 
     model = Sequential()
@@ -96,7 +102,10 @@ def encoder(batch_size, df_dim, ch, rows, cols):
     meansigma = Model([X], [mean, logsigma])
     return meansigma
 
-
+'''
+This is the other ConvNet we are learning:
+    - it's goal is to be able to tell which image is the "fake" one presumably
+'''
 def discriminator(batch_size, df_dim, ch, rows, cols):
     X = Input(batch_shape=(batch_size, rows[-1], cols[-1], ch))
     model = Convolution2D(df_dim, 5, 5, subsample=(2, 2), border_mode="same",
@@ -126,7 +135,13 @@ def discriminator(batch_size, df_dim, ch, rows, cols):
 
     return output
 
-
+'''
+Create our complicated model with Keras:
+    - create a generator network (convert world state into image)
+    - create an encoder network (convert network into world state)
+    - create a discriminator network
+    - create the loss function we will be training with
+'''
 def get_model(sess, image_shape=(80, 160, 3), gf_dim=64, df_dim=64, batch_size=64,
               name="autoencoder", gpu=0):
     K.set_session(sess)
